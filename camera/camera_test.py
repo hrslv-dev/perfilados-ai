@@ -3,6 +3,9 @@ import cv2
 cap = cv2.VideoCapture(0)
 while True: 
         ret, frame = cap.read()
+        altura, largura, canaais = frame.shape
+        print(largura, ", ", altura)
+        
         cv2.imshow("Webcam", frame)
         
         if cv2.waitKey(1) == 27:  
