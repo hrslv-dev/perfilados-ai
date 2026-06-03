@@ -10,12 +10,14 @@ class Preprocessor:
         # Controlam o comportamento matemático do preprocessamento 
     def __init__(self,
                  # Controla a intensidade do blur da imagem
-                 blur_kernel=(5, 5),
+                 blur_kernel=(9, 9),
                  # Separação entre preto e branco
-                 threshold_value=120):
+                 threshold_value=120,
+                 use_otsu=True):
         self.blur_kernel = blur_kernel
         self.threshold_value = threshold_value
-    
+        self.use_otsu = use_otsu
+
     # Aqui entra a imagem colorida em BGR 
     def to_grayscale(self,frame): 
         # Transformando BGR em intensidade luminosa 
@@ -38,13 +40,22 @@ class Preprocessor:
     
     # Se pixel > threshold -> branco 
     # Se não -> preto 
-    def apply_threshold(self,blurred_frame): 
-        _, thresh = cv2.threshold(
-            blurred_frame,
-            self.threshold_value,
-            255,
-            cv2.THRESH_BINARY,
-        )
+    def apply_threshold(self,blurred_frame):
+
+        if self.use_otsu:  
+            _, thresh = cv2.threshold(
+                blurred_frame,
+                0,
+                255,
+                cv2.THRESH_BINARY + cv2.THRESH_OTSU  
+                )
+        else: 
+            _, thresh = cv2.threshold(
+                blurred_frame, 
+                self.threshold_value, 
+                255,
+                cv2.THRESH_BINARY
+            )
         return thresh
 
     def process(self, frame): 

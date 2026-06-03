@@ -7,8 +7,7 @@ class Renderer:
             self, 
             frame, 
             x,
-            y,
-            z, 
+            y, 
             w,
             h, 
             color=(255,0,0)
@@ -20,7 +19,7 @@ class Renderer:
             color, 
             2
         )
-        
+
     # Renderização textual 
     def draw_text(
             self,
@@ -73,7 +72,6 @@ class Renderer:
     def draw_complete_overlay(
         self,
         frame,
-        contour,
         features
     ):
 
@@ -84,12 +82,13 @@ class Renderer:
         h = features["height"]
 
 
-        self.draw_bounding_box(
+        self.draw_boundering_box(
             frame,
             x,
             y,
             w,
             h
+            
         )
 
         self.draw_features(

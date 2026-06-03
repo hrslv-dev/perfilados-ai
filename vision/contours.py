@@ -14,10 +14,19 @@ class ContourDetector:
         
         contours, hierarchy = cv2.findContours(
             binary_image,
-            cv2.RETR_EXTERNAL, # PEGUE APENAS CONTORNOS EXTERNOS 
+            cv2.RETR_TREE,  
             cv2.CHAIN_APPROX_SIMPLE # SIMPLIFIQUE PONTOS REDUNDANTES 
         )
-        return contours # Lista de contornos 
+        filtered_contours = []
+        for contour in contours: 
+
+            area = cv2.contourArea(contour)
+            if area > 500: 
+                filtered_contours.append(contour)
+
+        return filtered_contours, hierarchy
+        # Retorna hierarchy ( matriz ) 
+        # Lista de contornos 
         # Sequência de pontos geométricos (x1, y1).. 
     
     # Desenha linhas, bordas sobre a imagem
