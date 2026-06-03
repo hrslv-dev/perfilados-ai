@@ -49,3 +49,8 @@ class FeatureExtractor:
              if item[3] != -1: 
                   holes+=1 
         return holes      
+    
+    # PROBLEMA AQUI:
+        # Se a camera captura 3 objetos, cada um com seus buracos
+        # count_holes retorna a soma de buracos de todos os objetos
+        # Ou seja: um perfil sem buraco pode receber holes = 3 por causa de outros contornos de ruído 
