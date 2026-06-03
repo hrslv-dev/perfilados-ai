@@ -38,6 +38,7 @@ class FeatureExtractor:
 
             return features
     
+    # Conta todos os contornos filhos no frame inteiro 
     def count_holes(self,hierarchy): 
         # Responsabilidade : contar contornos internos 
         holes = 0

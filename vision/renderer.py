@@ -51,7 +51,7 @@ class Renderer:
         self.draw_text(
             frame, 
             f"Area: {int(area)}",
-            (x,y,-10), 
+            (x,y -10),
             (0,255,0)
         )
 

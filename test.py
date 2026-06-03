@@ -82,7 +82,7 @@ while True:
                     0.6,
                     (255,255,0), 
                     2)
-        cv2.putText(frame,f"Holes:{holes:.2f}", 
+        cv2.putText(frame,f"Holes:{holes}", 
                     (x,y -80), 
                     cv2.FONT_HERSHEY_SIMPLEX, 
                     0.6,
