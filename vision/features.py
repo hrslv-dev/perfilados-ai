@@ -60,9 +60,9 @@ class FeatureExtractor:
                     hole_area = cv2.contourArea(all_contours[i])
                     if hole_area >= min_hole_area: 
                          holes+=1
-                    else: 
-                         # fallback sem filtro de area  
-                         holes+=1
+                else: 
+                    # fallback sem filtro de area  
+                    holes+=1
 
         return holes      
     
