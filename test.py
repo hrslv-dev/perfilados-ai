@@ -1,106 +1,66 @@
+"""
+test.py — Loop de validação de features em tempo real.
+
+FIX aplicado:
+  - Usa Renderer em vez de duplicar lógica de rendering inline
+  - Usa novo Preprocessor (CLAHE + adaptativo) em vez de Otsu
+  - Corrigido formato :.2f em holes (era int)
+  - extract_features agora recebe all_contours para count_holes correto
+"""
 
 from camera.capture import CameraCapture
-from vision.preprocessor import Preprocessor
+from vision.preprocessor import Preprocessor      # FIX: arquivo renomeado
 from vision.contours import ContourDetector
 from vision.features import FeatureExtractor
+from vision.renderer import Renderer
 
-import cv2;
-camera = CameraCapture()
-preprocessor_noOtsu = Preprocessor(use_otsu=False)
-preprocessor = Preprocessor()
+import cv2
+
+camera           = CameraCapture()
+preprocessor     = Preprocessor()                 # FIX: agora usa CLAHE + adaptativo
 contour_detector = ContourDetector()
-extractor = FeatureExtractor()
+extractor        = FeatureExtractor()
+renderer         = Renderer()                     # FIX: Renderer agora é usado
 
 camera.connect()
 
 frame_count = 0
-# -------#
 
+# TESTES a realizar:
+#   1. Girar o perfilado → aspect_ratio e circularity devem se manter estáveis
+#   2. Distanciar da câmera → area muda, circularity e aspect_ratio NÃO devem mudar
+#   3. Testar com 2 geometrias diferentes → confirmar separação das classes
+#   4. Estatística: 100 frames → média e desvio padrão de cada feature
+#      Se desvio padrão for pequeno = feature confiável para o modelo
 
-# TESTES: 
-    # Girar o perfilado quadrado por exemplo para validar as features
-    #   Caso mantenham-se constantes -> features confiáveis
-
-    # Distanciar o objeto da câmera -> Aspect Ratio e circularity não devem mudar
-            # Enquanto area MUDA MUITO 
-
-    # Teste de discriminação: 
-        # Classificar 4 geometrias diferentes
-        # Anotar o aspect ratio, circularity e holes
-        # Montar tabela 
-    # DEFINIR SE AS CLASSES REALMENTE SE SEPARAM (pois caso o limiar de diferença entre uma classe para outra seja muito
-    # baixo, o modelo pode ter dificuldade)
-    # Estatśitica: 
-        # Captar 100 frames. 
-        # Calcular média, mínimo, máximo, desvio padrão de cada feature
-        # Se desvio padrão for pequeno = feature confiável 
-        # OPCIONAL : Montar tabela de média e desvio padrão de cada feature 
-        
-# RESULTADOS: 
-# -- #
-    
 while True: 
     frame = camera.read_frame()
-    
     processed = preprocessor.process(frame)
-    # Teste com no Otsu para ver a diferença    
-    processed_noOtsu = preprocessor_noOtsu.process(frame)
-    contours, hierarchy = contour_detector.find_contours(processed)
+    contours, hierarchy, all_contours = contour_detector.find_contours(processed)
 
     for contour in contours: 
-        area = cv2.contourArea(contour)
+        # FIX: passa all_contours originais para count_holes usar o mesmo índice do hierarchy
+        features = extractor.extract_features(contour, hierarchy, all_contours=all_contours)
 
-        features = extractor.extract_features(contour, hierarchy)
-        frame_count +=1
-
+        frame_count += 1
         if frame_count <= 100: 
-            print(len(contours))
+            print(
+                f"[{frame_count:03d}] "
+                f"contornos={len(contours)} | "
+                f"area={features['area']:.0f} | "
+                f"circ={features['circularity']:.3f} | "
+                f"ar={features['aspect_ratio']:.3f} | "
+                f"holes={features['holes']} | "    # FIX: sem :.2f
+                f"hollow={features['is_hollow']}"
+            )
 
-        x,y,w,h = cv2.boundingRect(contour)
-        aspect_ratio = features["aspect_ratio"]
-        circularity = features["circularity"]
-        holes = features["holes"]
-        is_hollow = features["is_hollow"]
-
-        cv2.drawContours(frame,[contour], -1,(0,255,0),2)
-        cv2.rectangle(frame,(x,y), (x+w, y+h), (255,0,0), 2)
-        cv2.putText(frame,f"Area: {int(area)}",
-                    (x,y -10),
-                    cv2.FONT_HERSHEY_SIMPLEX, 
-                    0.6, 
-                    (0,255,0),
-                    2)
-        cv2.putText(frame, f"AR: {aspect_ratio:.2f}",
-                    (x,y - 35),
-                    cv2.FONT_HERSHEY_SIMPLEX, 
-                    0.6,
-                    (0,255,255),
-                    2)
-        cv2.putText(frame,f"Circ: {circularity:.2f}", 
-                    (x,y - 60), 
-                    cv2.FONT_HERSHEY_SIMPLEX,
-                    0.6,
-                    (255,255,0), 
-                    2)
-        cv2.putText(frame,f"Holes:{holes}", 
-                    (x,y -80), 
-                    cv2.FONT_HERSHEY_SIMPLEX, 
-                    0.6,
-                    (255,255,0),
-                    2)
-        cv2.putText(frame,f"Is_hollow: {is_hollow}",
-                    (x,y - 100), 
-                    cv2.FONT_HERSHEY_SIMPLEX, 
-                    0.6, 
-                    (255,255,0), 
-                    2) 
+        # FIX: usa Renderer em vez de duplicar cv2.putText inline
+        renderer.draw_complete_overlay(frame, features)
             
-    
     cv2.imshow("Industrial Vision", frame)    
-    cv2.imshow("Threshhold image", processed)
+    cv2.imshow("Threshold (CLAHE + Adaptativo)", processed)
 
-
-    if cv2.waitKey(1) == 27: 
+    if cv2.waitKey(1) == 27:   # ESC para sair
         break 
 
 camera.release()

@@ -46,7 +46,7 @@ class Preprocessor:
         self.blur_kernel = blur_kernel
         self.clahe = cv2.createCLAHE(
             clipLimit=clahe_clip,
-            titleGridSize=clahe_grid
+            tileGridSize=clahe_grid
         )
 
         self.adaptative_block = adaptative_block
@@ -75,7 +75,7 @@ class Preprocessor:
            [2 4 1]
            [1 2 1] 
     Essa matriz surge da curva em forma de sino -> f(x) = e -x2
-    ----------------------------------------------------------------------------------------------------------
+     ----------------------------------------------------------------------------------------------------------
     '''
 
     # Blur = suavização matemática
@@ -126,5 +126,5 @@ class Preprocessor:
         blurred = self.apply_blur(gray)
         enhanced = self.apply_clahe(blurred)
         binary = self.apply_threshold(enhanced)
-        cleaned = self.apply_morpholog(binary)
+        cleaned = self.apply_morphology(binary)
         return cleaned

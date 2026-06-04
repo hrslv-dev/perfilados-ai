@@ -32,6 +32,8 @@ class FeatureExtractor:
             features = { 
                   "area": area,
                   "perimeter": perimeter, 
+                  "x": x,
+                  "y": y,
                   "width": w, 
                   "height": h, 
                   "aspect_ratio":aspect_ratio, 

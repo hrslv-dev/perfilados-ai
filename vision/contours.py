@@ -19,14 +19,13 @@ class ContourDetector:
         )
         filtered_contours = []
         for contour in contours: 
-
             area = cv2.contourArea(contour)
             if area > 500: 
                 filtered_contours.append(contour)
 
-        return filtered_contours, hierarchy
-        # Retorna hierarchy ( matriz ) 
-        # Lista de contornos 
+        return filtered_contours, hierarchy, contours
+        # Retorna hierarchy ( matriz )
+        # Lista de contornos filtrados + lista original de contornos
         # Sequência de pontos geométricos (x1, y1).. 
     
     # Desenha linhas, bordas sobre a imagem
