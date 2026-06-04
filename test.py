@@ -1,6 +1,6 @@
 
 from camera.capture import CameraCapture
-from vision.preprocessemt import Preprocessor
+from vision.preprocessor import Preprocessor
 from vision.contours import ContourDetector
 from vision.features import FeatureExtractor
 
