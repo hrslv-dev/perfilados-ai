@@ -1,8 +1,9 @@
 # Responsabilidade do features: 
     # Receber contornos 
     # Retornar dados tabulares 
-import cv2
+import math
 
+import cv2
 class FeatureExtractor: 
     # Extrai as features do modelo: 
         # area
@@ -10,19 +11,22 @@ class FeatureExtractor:
         # altura, largura e cumprimento 
         # aspect_ratio (formato)
         # circularidade
-    def extract_features(self,contour, hierarchy): 
+    def extract_features(self,contour, hierarchy, all_contours=None): 
             area = cv2.contourArea(contour)
-
             perimeter = cv2.arcLength(contour, True)
+            x ,y ,w ,h = cv2.boundingRect(contour)
+            aspect_ratio = w / h if h > 0 else 1.0 
+            
+            # FIX HERE: 
+            if perimeter > 0: 
+                 circularity = (4 * math.pi * area) / (perimeter ** 2)
 
-            x,y,w,h = cv2.boundingRect(contour)
+            else: 
+                 circularity = 0.0
 
-            aspect_ratio = w/h 
-
-            circularity = (4 * 3.14159 * area) / (perimeter * perimeter)
-
-            holes = self.count_holes(hierarchy)
-
+            # FIX HERE: 
+                # passa all_contours para count_holes poder filtrar por área 
+            holes = self.count_holes(hierarchy, all_contours)
             is_hollow = int(holes > 0)
 
             features = { 
@@ -39,17 +43,28 @@ class FeatureExtractor:
             return features
     
     # Conta todos os contornos filhos no frame inteiro 
-    def count_holes(self,hierarchy): 
-        # Responsabilidade : contar contornos internos 
+    def count_holes(self,hierarchy, all_contours=None, min_hole_area=100): 
+    # FIX Antes: Contava todos os contornos filhos no frame inteiro
+        # AGORA: Agora só conta um contorno como buraco se: 
+        # Tem pai (hierarchy [i][3] != -1) -> é filho/interno
+        # Tem área >= min_hole_area - não é ruido de reflexo 
+
         holes = 0
         if hierarchy is None: 
              return 0 
+        for i, item in enumerate(hierarchy[0]):  
+             if item[3] != -1: # Tem pai -> buraco
+                if all_contours is not None: 
+                    hole_area = cv2.contourArea(all_contours[i])
+                    if hole_area >= min_hole_area: 
+                         holes+=1
+                    else: 
+                         # fallback sem filtro de area  
+                         holes+=1
 
-        for item in hierarchy[0]: 
-             if item[3] != -1: 
-                  holes+=1 
         return holes      
     
+
     # PROBLEMA AQUI:
         # Se a camera captura 3 objetos, cada um com seus buracos
         # count_holes retorna a soma de buracos de todos os objetos
