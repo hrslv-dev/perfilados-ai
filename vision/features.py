@@ -2,8 +2,8 @@
     # Receber contornos 
     # Retornar dados tabulares 
 import math
-
 import cv2
+
 class FeatureExtractor: 
     # Extrai as features do modelo: 
         # area
