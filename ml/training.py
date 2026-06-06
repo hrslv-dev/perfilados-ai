@@ -101,6 +101,10 @@ def load_dataset():
     print(f"Total de Features : {len(FEATURE_ORDER)}\n")
     print()
     print(f"Distribuição de classes: ")
+    
+    # Imprime na tela como as classes estão distribuidas no dataset
+    # Vizualização de como o dataset está estruturado
+    
     for cls, cnt in df["label"].value_counts().items(): 
         pct = cnt/ len(df) * 100
         bar = "█" * int(pct / 3)
@@ -125,16 +129,27 @@ Mas o que é o RandomForest?
     Esta aprende perguntas binárias sore as features. Cada pergunta é escolhida automaticamente pelo algoritmo usado
     a critério 
 ---------------------------------------------------------------------------------------------------------------------------------------
-
 '''
-def train():
-    x, y = load_dataset()
+
+def train(X:pd.DataFrame, y: pd.Series) -> tuple:
     le = LabelEncoder()
     y_enc = le.fit_transform(y)
 
-    # Split estratificado : mantém proporção de classes em treino e teste
+    print(" Mapeamento de classes ")
+    
+    # Encode de labels 
+    # RandomForestClassifier (internamente) trabalha com inteiros, ou seja cada classificação é um valor inteiro númerico 
+    # O LabelEncoder aprende esse mapeamento de classes com .fit_transform(y)
+    # Por que salvar encoder junto ao modelo? Se eu treinar em ordem diferente amanhã (outra versão do dataset), o modelo vai
+    # encontrar os labels errados.  
+    
+    # O que significa esse loop for? 
+    for i, cls in enumerate(le.classes_): 
+        print(f"   {i} -> {cls}")
+    print()
+    
     X_train, X_test, y_train, y_test = train_test_split(
-        x, y_enc, test_size=0.2, stratify=y_enc, random_state=42
+        X, y_enc, test_size=0.2, stratify=y_enc, random_state=42
     )
     clf = RandomForestClassifier(
         n_estimators=200,
