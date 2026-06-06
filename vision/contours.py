@@ -3,11 +3,6 @@
 
 import cv2
 
-# Responsabilidade da classe : 
-    # Detectar contornos 
-    # Filtrar cotornos ruins 
-    # Calcular bounding box 
-    # Detectar contornos internos 
 class ContourDetector:
 
     def __init__(self,min_area=2000): 
