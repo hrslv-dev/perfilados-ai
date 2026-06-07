@@ -38,14 +38,17 @@ while True:
     processed = preprocessor.process(frame)
     contours, hierarchy, all_contours = contour_detector.find_contours(processed)
 
+    features_history = []
+
     for contour in contours:
         # FIX: passa all_contours originais para count_holes usar o mesmo índice do hierarchy
         features = extractor.extract_features(
             contour, hierarchy, all_contours=all_contours
         )
-
+        
         frame_count += 1
         if frame_count <= 100:
+            features_history.append(features)
             print(
                 f"[{frame_count:03d}] "
                 f"contornos={len(contours)} | "
@@ -55,8 +58,7 @@ while True:
                 f"holes={features['holes']} | "  # FIX: sem :.2f
                 f"hollow={features['is_hollow']}"
             )
-
-        # FIX: usa Renderer em vez de duplicar cv2.putText inline
+            
         renderer.draw_complete_overlay(frame, features)
 
     cv2.imshow("Industrial Vision", frame)
