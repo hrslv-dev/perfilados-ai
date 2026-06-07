@@ -30,16 +30,16 @@ class FeatureExtractor:
             is_hollow = int(holes > 0)
 
             features = { 
+                  "circularity": circularity,
+                  "aspect_ratio":aspect_ratio, 
+                  "holes": holes,
                   "area": area,
+                  "is_hollow" : is_hollow,
                   "perimeter": perimeter, 
                   "x": x,
                   "y": y,
                   "width": w, 
-                  "height": h, 
-                  "aspect_ratio":aspect_ratio, 
-                  "circularity": circularity,
-                  "holes": holes,
-                  "is_hollow" : is_hollow
+                  "height": h
             }
 
             return features
