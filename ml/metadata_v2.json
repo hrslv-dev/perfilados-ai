@@ -1,0 +1,28 @@
+{
+  "dataset": "perfis_dataset_v2.csv",
+  "feature_order": [
+    "circularity",
+    "aspect_ratio",
+    "holes",
+    "area",
+    "is_hollow",
+    "material"
+  ],
+  "classes": [
+    "tubo_quadrado_macico",
+    "tubo_quadrado_oco",
+    "tubo_redondo_macico",
+    "tubo_redondo_oco"
+  ],
+  "n_classes": 4,
+  "n_estimators": 200,
+  "oob_score": 0.9583,
+  "cv_accuracy_mean": 0.9533,
+  "cv_accuracy_std": 0.0113,
+  "cv_f1_mean": 0.9532,
+  "roc_auc_ovr": 0.9985,
+  "n_train": 480,
+  "n_test": 120,
+  "dataset_source": "synthetic_v2",
+  "notes": "4 classes: redondo/quadrado × oco/maciço. Retreinar com dados reais após validação em fábrica."
+}

@@ -1,10 +1,10 @@
-# Não estou treinando um modelo que reconhece imagens, mas sim um modelo que reconhece padrões em números 
+import joblib 
+import json 
+import numpy as np 
+import pandas as pd 
+from pathlib import Path
 
-# Fluxo de funcionamento: 
-# OpenCV -> Converte imagens em numeros que representam algum formato geometrico 
+MODEL_DIR = Path(__file__).parent
 
-# O que caracteriza um círculo? 
-    # Aspect ratio = 1 ( largura = altura)
-    # Circularidade = 1 (circulo é a forma mais circular possível)
-    # Area (Pode variar)
-    # 
+CONFIDENCE_THRESHOLD = 0.70
+
