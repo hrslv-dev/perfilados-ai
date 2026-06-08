@@ -747,6 +747,24 @@ class CapturaEClassificador:
         try:
             # Conecta a câmera
             self.camera.connect()
+            self.camera.cap.set(cv2.CAP_PROP_FRAME_WIDTH, 1280)
+            self.camera.cap.set(cv2.CAP_PROP_FRAME_HEIGHT, 720)
+
+            # Janelas redimensionáveis 
+            for nome in [ 
+                        "Captura de perfil - Posicionamento",
+                        "Captura de perfil - Coletando",
+                        "Captura de perfil - Resultado", 
+                        "Limiarização (CLAHE + Adaptativo)"
+                        ]: 
+                cv2.namedWindow(nome,cv2.WINDOW_NORMAL)
+                
+                 
+            cv2.resizeWindow("Captura de Perfil - Posicionamento", 1280, 720)
+            cv2.resizeWindow("Captura de Perfil - Coletando", 1280, 720)           
+            cv2.resizeWindow("Captura de Perfil - Resultado", 1280, 720)           
+            cv2.resizeWindow("Limiarização (CLAHE + Adaptativo)", 1280, 720)           
+
             print(f"\n  Câmera conectada.  Frames: {self.n_frames}  Countdown: {self.countdown}s\n")
 
             # ── FASE 1: COUNTDOWN ──────────────────────────────────────────────
@@ -770,8 +788,11 @@ class CapturaEClassificador:
                 frame = self.camera.read_frame()
                 desenhar_resultado_frame(frame, resultado_final)
                 cv2.imshow("Captura de Perfil — Resultado", frame)
-                cv2.waitKey(3000)
-
+                while True: 
+                    cv2.imshow("Captura de Perfil - Resultado", frame)
+                    
+                    if cv2.waitKey(3000) & 0xFF == 27: 
+                        break 
         finally:
             # Garante que a câmera é liberada mesmo se houver exceção
             self.camera.release()
