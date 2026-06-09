@@ -15,6 +15,8 @@ from vision.features import FeatureExtractor
 from vision.renderer import Renderer
 
 import cv2
+import pandas as pd
+import numpy as np
 
 camera = CameraCapture()
 preprocessor = Preprocessor()  # FIX: agora usa CLAHE + adaptativo
@@ -33,6 +35,48 @@ frame_count = 0
 #   4. Estatística: 100 frames → média e desvio padrão de cada feature
 #      Se desvio padrão for pequeno = feature confiável para o modelo
 
+class SessionColecter: 
+    def __init__(self, target_samples):
+        self.target_samples = target_samples
+        self.samples = []
+    
+    def add(self,features): 
+        self.samples.append(features)
+    
+    def is_complete(self): 
+        return len(self.samples) >= self.target_samples
+    
+    def count(self): 
+        return len(self.samples)
+    
+    def get_samples(self): 
+        return self.samples
+
+class StatisticAgregator: 
+    def build_feature_vector(self,samples): 
+        df = pd.DataFrame(samples)
+        final_features = {}
+        
+        for column in df.columns: 
+            final_features[f"{column}_mean"] = df[column].mean()
+            final_features[f"{column}_std"] = df[column].std()
+        
+        return final_features
+
+class PredictionService: 
+    def __init__(self,model): 
+        self.model = model
+    
+    def predict(self,feature_vector): 
+        X = pd.DataFrame([feature_vector])
+        prediction = self.model.predict(X)[0]
+        
+        confidence = np.max(
+            self.model.predict_proba(X)
+        ) 
+        return prediction, confidence
+    
+    
 while True:
     frame = camera.read_frame()
     processed = preprocessor.process(frame)
@@ -50,7 +94,7 @@ while True:
         if frame_count <= 100:
             features_history.append(features)
             print(
-                f"[{frame_count:03d}] "
+                f"[{frame_count:03d}] |"
                 f"contornos={len(contours)} | "
                 f"area={features['area']:.0f} | "
                 f"circ={features['circularity']:.3f} | "

@@ -12,7 +12,7 @@ import cv2
 class CameraCapture: 
     # Assim que CameraCapture for inicializado a câmera será inicializada
     # Definindo a altura e largura padrões da imagem 
-    def __init__(self, source=0, width=640, height=480): 
+    def __init__(self, source=1, width=640, height=480): 
         self.source = source
         self.width = width
         self.height = height
