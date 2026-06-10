@@ -8,15 +8,15 @@ FIX aplicado:
   - extract_features agora recebe all_contours para count_holes correto
 """
 
+import cv2
+import numpy as np
+import pandas as pd
+
 from camera.capture import CameraCapture
-from vision.preprocessor import Preprocessor  # FIX: arquivo renomeado
 from vision.contours import ContourDetector
 from vision.features import FeatureExtractor
+from vision.preprocessor import Preprocessor  # FIX: arquivo renomeado
 from vision.renderer import Renderer
-
-import cv2
-import pandas as pd
-import numpy as np
 
 camera = CameraCapture()
 preprocessor = Preprocessor()  # FIX: agora usa CLAHE + adaptativo
@@ -35,48 +35,62 @@ frame_count = 0
 #   4. Estatística: 100 frames → média e desvio padrão de cada feature
 #      Se desvio padrão for pequeno = feature confiável para o modelo
 
-class SessionColecter: 
+
+"""
+Essa classe é responsável por coletar e armazenar amostras de features para análise estatística.
+Ou seja, coleta as features de cada frame e armazena para posterior análise.
+"""
+
+
+class SessionColecter:
     def __init__(self, target_samples):
         self.target_samples = target_samples
         self.samples = []
-    
-    def add(self,features): 
+
+    def add(self, features):
         self.samples.append(features)
-    
-    def is_complete(self): 
+
+    def is_complete(self):
         return len(self.samples) >= self.target_samples
-    
-    def count(self): 
+
+    def count(self):
         return len(self.samples)
-    
-    def get_samples(self): 
+
+    def get_samples(self):
         return self.samples
 
-class StatisticAgregator: 
-    def build_feature_vector(self,samples): 
+
+"""
+Essa classe é responsável por agregar as amostras coletadas e contruir uma lista com as features agregadas estatísticamente.
+Utiliza-se média e desvio padrão para cada feature coletada
+
+"""
+
+
+class StatisticAgregator:
+    def build_feature_vector(self, samples):
         df = pd.DataFrame(samples)
         final_features = {}
-        
-        for column in df.columns: 
+
+        for column in df.columns:
             final_features[f"{column}_mean"] = df[column].mean()
             final_features[f"{column}_std"] = df[column].std()
-        
+
         return final_features
 
-class PredictionService: 
-    def __init__(self,model): 
+
+class PredictionService:
+    def __init__(self, model):
         self.model = model
-    
-    def predict(self,feature_vector): 
+
+    def predict(self, feature_vector):
         X = pd.DataFrame([feature_vector])
         prediction = self.model.predict(X)[0]
-        
-        confidence = np.max(
-            self.model.predict_proba(X)
-        ) 
+
+        confidence = np.max(self.model.predict_proba(X))
         return prediction, confidence
-    
-    
+
+
 while True:
     frame = camera.read_frame()
     processed = preprocessor.process(frame)
@@ -89,7 +103,7 @@ while True:
         features = extractor.extract_features(
             contour, hierarchy, all_contours=all_contours
         )
-        
+
         frame_count += 1
         if frame_count <= 100:
             features_history.append(features)
@@ -102,7 +116,7 @@ while True:
                 f"holes={features['holes']} | "  # FIX: sem :.2f
                 f"hollow={features['is_hollow']}"
             )
-            
+
         renderer.draw_complete_overlay(frame, features)
 
     cv2.imshow("Industrial Vision", frame)
