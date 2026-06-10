@@ -9,10 +9,10 @@ FIX aplicado:
 """
 
 import cv2
-import numpy as np
-import pandas as pd
 
+from agregation.agregator import PredictionService, SessionColecter, StatisticAgregator
 from camera.capture import CameraCapture
+from ml.model import Classifier
 from vision.contours import ContourDetector
 from vision.features import FeatureExtractor
 from vision.preprocessor import Preprocessor  # FIX: arquivo renomeado
@@ -22,91 +22,41 @@ camera = CameraCapture()
 preprocessor = Preprocessor()  # FIX: agora usa CLAHE + adaptativo
 contour_detector = ContourDetector()
 extractor = FeatureExtractor()
-renderer = Renderer()  # FIX: Renderer agora é usado
+renderer = Renderer()
+classifier = Classifier()
+collecter = SessionColecter(target_samples=60)
+predictor = PredictionService(model=classifier)
+agregator = StatisticAgregator()
 
 camera.connect()
-
 frame_count = 0
 
-# TESTES a realizar:
-#   1. Girar o perfilado → aspect_ratio e circularity devem se manter estáveis
-#   2. Distanciar da câmera → area muda, circularity e aspect_ratio NÃO devem mudar
-#   3. Testar com 2 geometrias diferentes → confirmar separação das classes
-#   4. Estatística: 100 frames → média e desvio padrão de cada feature
-#      Se desvio padrão for pequeno = feature confiável para o modelo
-
-
 """
-Essa classe é responsável por coletar e armazenar amostras de features para análise estatística.
-Ou seja, coleta as features de cada frame e armazena para posterior análise.
+Pipeline Completo;
+
+    1. Captura do frame da câmera
+    2. Pré-Processamento (CLAHE + adaptativo)
+    3. Detecção de contornos
+    4. Extração de features
+    5. Predição de classe
+    6. Renderização do resultado
 """
-
-
-class SessionColecter:
-    def __init__(self, target_samples):
-        self.target_samples = target_samples
-        self.samples = []
-
-    def add(self, features):
-        self.samples.append(features)
-
-    def is_complete(self):
-        return len(self.samples) >= self.target_samples
-
-    def count(self):
-        return len(self.samples)
-
-    def get_samples(self):
-        return self.samples
-
-
 """
-Essa classe é responsável por agregar as amostras coletadas e contruir uma lista com as features agregadas estatísticamente.
-Utiliza-se média e desvio padrão para cada feature coletada
-
+Loop principal que chama as classes de coleta, agregação e predição
 """
-
-
-class StatisticAgregator:
-    def build_feature_vector(self, samples):
-        df = pd.DataFrame(samples)
-        final_features = {}
-
-        for column in df.columns:
-            final_features[f"{column}_mean"] = df[column].mean()
-            final_features[f"{column}_std"] = df[column].std()
-
-        return final_features
-
-
-class PredictionService:
-    def __init__(self, model):
-        self.model = model
-
-    def predict(self, feature_vector):
-        X = pd.DataFrame([feature_vector])
-        prediction = self.model.predict(X)[0]
-
-        confidence = np.max(self.model.predict_proba(X))
-        return prediction, confidence
-
-
 while True:
     frame = camera.read_frame()
     processed = preprocessor.process(frame)
     contours, hierarchy, all_contours = contour_detector.find_contours(processed)
 
-    features_history = []
-
     for contour in contours:
-        # FIX: passa all_contours originais para count_holes usar o mesmo índice do hierarchy
         features = extractor.extract_features(
             contour, hierarchy, all_contours=all_contours
         )
 
         frame_count += 1
-        if frame_count <= 100:
-            features_history.append(features)
+        if frame_count <= 60:
+            collecter.add(features)
             print(
                 f"[{frame_count:03d}] |"
                 f"contornos={len(contours)} | "
@@ -122,7 +72,12 @@ while True:
     cv2.imshow("Industrial Vision", frame)
     cv2.imshow("Threshold (CLAHE + Adaptativo)", processed)
 
-    if cv2.waitKey(1) == 27:  # ESC para sair
+    if collecter.is_complete():
+        samples = collecter.get_samples()
+        features_vector = agregator.build_feature_vector(samples)
+
+
+        if cv2.waitKey(1) == 27:  # ESC para sair
         break
 
 camera.release()
