@@ -7,7 +7,7 @@ Ou seja, coleta as features de cada frame e armazena para posterior análise.
 """
 
 
-class SessionColecter:
+class SessionCollector:
     def __init__(self, target_samples):
         self.target_samples = target_samples
         self.samples = []
@@ -33,14 +33,12 @@ Utiliza-se média e desvio padrão para cada feature coletada
 
 class StatisticAgregator:
     def build_feature_vector(self, samples):
-        df = pd.DataFrame(samples)
-        final_features = {}
-
-        for column in df.columns:
-            final_features[f"{column}_mean"] = df[column].mean()
-            final_features[f"{column}_std"] = df[column].std()
-
-        return final_features
+        feature_vector = {}
+        feature_names = {"circularity", "aspect_ratio", "holes", "area", "is_hollow"}
+        for feature in feature_names:
+            values = [sample[feature] for sample in samples]
+            feature_vector[feature] = sum(values) / len(values)
+        return feature_vector
 
 
 """
