@@ -13,7 +13,7 @@ import cv2
 from agregation.agregator import (
     PredictionService,
     SessionCollector,
-    StatisticAggregator,
+    StatisticAgregator,
 )
 from camera.capture import CameraCapture
 from ml.model import Classifier
@@ -30,7 +30,7 @@ renderer = Renderer()
 classifier = Classifier()
 collector = SessionCollector(target_samples=60)
 predictor = PredictionService(model=classifier)
-aggregator = StatisticAggregator()
+aggregator = StatisticAgregator()
 
 
 """
@@ -48,60 +48,56 @@ Loop principal que chama as classes de coleta, agregação e predição
 """
 
 
-def main():
+camera.connect()
+samples_count = 0
+prediction_done = False
 
-    camera.connect()
-    samples_count = 0
-    prediction_done = False
+while True:
+    frame = camera.read_frame()
+    if frame is None:
+        continue
+    processed = preprocessor.process(frame)
+    contours, hierarchy, all_contours = contour_detector.find_contours(processed)
 
-    while True:
-        frame = camera.read_frame()
-        if frame is None:
-            continue
-        processed = preprocessor.process(frame)
-        contours, hierarchy, all_contours = contour_detector.find_contours(processed)
+    # collector estava ligado aos contornos e não aos frames, agora com essa alteração o foco vai mais para o objeto e não
+    # para o contorno em si
 
-        # collector estava ligado aos contornos e não aos frames, agora com essa alteração o foco vai mais para o objeto e não
-        # para o contorno em si
+    if contours:
+        largest_contour = max(contours, key=cv2.contourArea)
+        samples = extractor.extract_features(
+            largest_contour, hierarchy, all_contours=all_contours
+        )
+        renderer.draw_complete_overlay(frame, samples)
 
-        if contours:
-            largest_contour = max(contours, key=cv2.contourArea)
-            samples = extractor.extract_features(
-                largest_contour, hierarchy, all_contours=all_contours
+        if samples_count < 60:
+            collector.add(samples)
+            print(
+                f"[{samples_count:03d}] |"
+                f"contornos={len(contours)} | "
+                f"circ={samples['circularity']:.3f} | "
+                f"ar={samples['aspect_ratio']:.3f} | "
+                f"holes={samples['holes']} | "  # FIX: sem :.2f
+                f"hollow={samples['is_hollow']}"
+                f"area={samples['area']:.0f} | "
             )
-            renderer.draw_complete_overlay(frame, samples)
+            samples_count += 1
 
-            if samples_count < 60:
-                collector.add(samples)
-                print(
-                    f"[{samples_count:03d}] |"
-                    f"contornos={len(contours)} | "
-                    f"circ={samples['circularity']:.3f} | "
-                    f"ar={samples['aspect_ratio']:.3f} | "
-                    f"holes={samples['holes']} | "  # FIX: sem :.2f
-                    f"hollow={samples['is_hollow']}"
-                    f"area={samples['area']:.0f} | "
-                )
-                samples_count += 1
+    cv2.imshow("Industrial Vision", frame)
+    cv2.imshow("Threshold (CLAHE + Adaptativo)", processed)
 
-        cv2.imshow("Industrial Vision", frame)
-        cv2.imshow("Threshold (CLAHE + Adaptativo)", processed)
+    if collector.is_complete() and not prediction_done:
+        samples = collector.get_samples()
+        feature_vector = aggregator.build_feature_vector(samples)
+        prediction, confidence = predictor.predict(feature_vector)
+        print(f"Classificação: {prediction} \n")
+        print("=================================")
+        print(f"Confiança: {confidence}")
+        print("=================================")
+        prediction_done = True
 
-        if collector.is_complete() and not prediction_done:
-            samples = collector.get_samples()
-            feature_vector = aggregator.build_feature_vector(samples)
-            prediction, confidence = predictor.predict(feature_vector)
-            print(f"Classificação: {prediction} \n")
-            print("=================================")
-            print(f"Confiança: {confidence}")
-            print("=================================")
-            prediction_done = True
-
-        if cv2.waitKey(1) == 27:  # ESC para sair
-            break
-    camera.release()
-    cv2.destroyAllWindows()
+    if cv2.waitKey(1) == 27:  # ESC para sair
+        break
+camera.release()
+cv2.destroyAllWindows()
 
 
-if __name__ == "__main__":
-    main()
