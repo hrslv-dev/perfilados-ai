@@ -39,7 +39,7 @@ class StatisticAggregator:
         feature_vector["aspect_ratio"] = (
             sum(s["aspect_ratio"] for s in samples) / len(samples)
         )
-        feature_vector["holes"] = (
+        feature_vector["holes"] = round(
             sum(s["holes"] for s in samples) / len(samples)
         )
         feature_vector["area"] = (
@@ -73,5 +73,6 @@ class PredictionService:
         result = self.model.predict(feature_vector)
         prediction = result["label"]
         confidence = result["confidence_pct"]
+        is_confiable = result["low_confidence"]
         message = result["message"]
-        return prediction, confidence, message
+        return prediction, confidence, is_confiable, message
