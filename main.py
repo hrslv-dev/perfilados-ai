@@ -54,20 +54,16 @@ prediction_done = False
 
 while True:
     frame = camera.read_frame()
-    print("Leitura do frame feita!")
     if frame is None:
         continue
     processed = preprocessor.process(frame)
-    print("Imagem binária gerada com sucesso! ")
-    largest, hierarchy, all_contours = contour_detector.find_largest(processed)
-    print("Maior contorno encontrado!")
+    contours, hierarchy, all_contours = contour_detector.find_contours(processed)
     # collector estava ligado aos contornos e não aos frames, agora com essa alteração o foco vai mais para o objeto e não
     # para o contorno em si
-    if largest:
+    if contours:
         features = extractor.extract_features(
-            largest, hierarchy, all_contours=all_contours
-        )
-        print("Features extraídas com sucesso")
+            largest = max(contours, key=cv2.contourArea),
+            largest, hierarchy, all_contours=all_contours)
         renderer.draw_complete_overlay(frame, features)
 
         if samples_count < 60:
@@ -82,20 +78,21 @@ while True:
                 f"area={features['area']:.0f} | "
             )
             samples_count += 1
-    print("Processando vizualização em tempo real.....")
     cv2.imshow("Industrial Vision", frame)
     cv2.imshow("Threshold (CLAHE + Adaptativo)", processed)
 
 
-    print("Processando previsão do modelo...")
-    print("===================================")
     if collector.is_complete() and not prediction_done:
+        print("Processando previsão do modelo....")
+        print(".................")
         samples = collector.get_samples()
         feature_vector = aggregator.build_feature_vector(samples)
-        result = 'predictor'.predict(feature_vector)
+        material_id = int(input("Material do perfilado \n 0=Aço carbono\n, 1=Inox \n 2=Alumínio "))
+        result = predictor.predict(feature_vector, material_id)
         prediction = result["label"]
         low_confidence = result["low_confidence"]
         confidence = result["confidence_pct"]
+        message = result["message"]
 
         print(f"Classificação: {prediction} \n")
         print("=================================")
@@ -103,6 +100,7 @@ while True:
         print("=================================")
         print(f"É confiável: {low_confidence}")
         print("=================================")
+        print(f"Mensagem: \n{messsage}")
         prediction_done = True
         print("Predição realizada com sucesso ! ")
         print("===============||================")
