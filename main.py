@@ -54,19 +54,20 @@ prediction_done = False
 
 while True:
     frame = camera.read_frame()
+    print("Leitura do frame feita!")
     if frame is None:
         continue
     processed = preprocessor.process(frame)
-    contours, hierarchy, all_contours = contour_detector.find_contours(processed)
-
+    print("Imagem binária gerada com sucesso! ")
+    largest, hierarchy, all_contours = contour_detector.find_largest(processed)
+    print("Maior contorno encontrado!")
     # collector estava ligado aos contornos e não aos frames, agora com essa alteração o foco vai mais para o objeto e não
     # para o contorno em si
-
-    if contours:
-        largest_contour = max(contours, key=cv2.contourArea)
+    if largest:
         features = extractor.extract_features(
-            largest_contour, hierarchy, all_contours=all_contours
+            largest, hierarchy, all_contours=all_contours
         )
+        print("Features extraídas com sucesso")
         renderer.draw_complete_overlay(frame, features)
 
         if samples_count < 60:
@@ -81,14 +82,17 @@ while True:
                 f"area={features['area']:.0f} | "
             )
             samples_count += 1
-
+    print("Processando vizualização em tempo real.....")
     cv2.imshow("Industrial Vision", frame)
     cv2.imshow("Threshold (CLAHE + Adaptativo)", processed)
 
+
+    print("Processando previsão do modelo...")
+    print("===================================")
     if collector.is_complete() and not prediction_done:
         samples = collector.get_samples()
         feature_vector = aggregator.build_feature_vector(samples)
-        result = predictor.predict(feature_vector)
+        result = 'predictor'.predict(feature_vector)
         prediction = result["label"]
         low_confidence = result["low_confidence"]
         confidence = result["confidence_pct"]
@@ -100,7 +104,8 @@ while True:
         print(f"É confiável: {low_confidence}")
         print("=================================")
         prediction_done = True
-
+        print("Predição realizada com sucesso ! ")
+        print("===============||================")
     if cv2.waitKey(1) == 27:  # ESC para sair
         break
 camera.release()
