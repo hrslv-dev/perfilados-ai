@@ -10,10 +10,10 @@ FIX aplicado:
 
 import cv2
 
-from agregation.agregator import (
+from aggregation.aggregator import (
     PredictionService,
     SessionCollector,
-    StatisticAgregator,
+    StatisticAggregator
 )
 from camera.capture import CameraCapture
 from ml.model import Classifier
@@ -30,7 +30,7 @@ renderer = Renderer()
 classifier = Classifier()
 collector = SessionCollector(target_samples=60)
 predictor = PredictionService(model=classifier)
-aggregator = StatisticAgregator()
+aggregator = StatisticAggregator()
 
 
 """
@@ -64,21 +64,21 @@ while True:
 
     if contours:
         largest_contour = max(contours, key=cv2.contourArea)
-        samples = extractor.extract_features(
+        features = extractor.extract_features(
             largest_contour, hierarchy, all_contours=all_contours
         )
-        renderer.draw_complete_overlay(frame, samples)
+        renderer.draw_complete_overlay(frame, features)
 
         if samples_count < 60:
-            collector.add(samples)
+            collector.add(features)
             print(
                 f"[{samples_count:03d}] |"
                 f"contornos={len(contours)} | "
-                f"circ={samples['circularity']:.3f} | "
-                f"ar={samples['aspect_ratio']:.3f} | "
-                f"holes={samples['holes']} | "  # FIX: sem :.2f
-                f"hollow={samples['is_hollow']}"
-                f"area={samples['area']:.0f} | "
+                f"circ={features['circularity']:.3f} | "
+                f"ar={features['aspect_ratio']:.3f} | "
+                f"holes={features['holes']} | "  # FIX: sem :.2f
+                f"hollow={features['is_hollow']}"
+                f"area={features['area']:.0f} | "
             )
             samples_count += 1
 
@@ -88,10 +88,16 @@ while True:
     if collector.is_complete() and not prediction_done:
         samples = collector.get_samples()
         feature_vector = aggregator.build_feature_vector(samples)
-        prediction, confidence = predictor.predict(feature_vector)
+        result = predictor.predict(feature_vector)
+        prediction = result["label"]
+        low_confidence = result["low_confidence"]
+        confidence = result["confidence_pct"]
+
         print(f"Classificação: {prediction} \n")
         print("=================================")
         print(f"Confiança: {confidence}")
+        print("=================================")
+        print(f"É confiável: {low_confidence}")
         print("=================================")
         prediction_done = True
 
@@ -99,5 +105,3 @@ while True:
         break
 camera.release()
 cv2.destroyAllWindows()
-
-
