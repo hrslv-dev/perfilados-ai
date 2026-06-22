@@ -8,13 +8,14 @@ FIX aplicado:
   - extract_features agora recebe all_contours para count_holes correto
 """
 
-import cv2
 import time
+
+import cv2
 
 from aggregation.aggregator import (
     PredictionService,
     SessionCollector,
-    StatisticAggregator
+    StatisticAggregator,
 )
 from camera.capture import CameraCapture
 from ml.model import Classifier
@@ -52,7 +53,7 @@ material_id = int(input("Material do perfilado\n0=carbono\n1=Inox\n2=Alumínio\n
 camera.connect()
 
 start_time = time.time()
-capture_delay = 35 # segundos
+capture_delay = 15  # segundos
 
 samples_count = 0
 prediction_done = False
@@ -72,7 +73,7 @@ while True:
             )
             renderer.draw_complete_overlay(frame, features)
 
-        # Começa a coletar as features aqui
+            # Começa a coletar as features aqui
             if not collector.is_complete():
                 collector.add(features)
                 print(
@@ -84,17 +85,19 @@ while True:
                     f"area={features['area']:.0f} | "
                 )
                 samples_count += 1
-    else :
+    else:
         remaining = capture_delay - elapsed
-        cv2.putText(frame, f"Waiting... ({remaining:.1f}s)",
-            (20,40),
+        cv2.putText(
+            frame,
+            f"Waiting... ({remaining:.1f}s)",
+            (20, 40),
             cv2.FONT_HERSHEY_SIMPLEX,
             1,
             (255, 255, 255),
-            2)
+            2,
+        )
     cv2.imshow("Industrial Vision", frame)
     cv2.imshow("Threshold (CLAHE + Adaptativo)", processed)
-
 
     if collector.is_complete() and not prediction_done:
         print("Processando previsão do modelo....")
@@ -106,8 +109,9 @@ while True:
         print(feature_vector)
         print("-------------------")
         print("Classificando...")
-
-        prediction,confidence,is_confiable,message = predictor.predict(feature_vector, material_id)
+        prediction, confidence, is_confiable, message = predictor.predict(
+            feature_vector, material_id
+        )
 
         print(f"Classificação: {prediction}")
         print("=================================")
@@ -120,7 +124,6 @@ while True:
         print("Predição realizada com sucesso ! ")
         print("===============||================")
 
-        print(f"Direcione-se para a pratileira {local}"")
     if cv2.waitKey(1) == 27:  # ESC para sair
         break
 camera.release()

@@ -8,11 +8,12 @@
 
 import cv2
 
+
 # Entidade (captura da cêmra) -> capturar frames
 class CameraCapture:
     # Assim que CameraCapture for inicializado a câmera será inicializada
     # Definindo a altura e largura padrões da imagem
-    def __init__(self, source=2, width=640, height=480):
+    def __init__(self, source=1, width=640, height=480):
         self.source = source
         self.width = width
         self.height = height
@@ -28,14 +29,8 @@ class CameraCapture:
 
         # Define a resolução de imagem usada
         # Com a troca de Câmera isso pode ser ACEITO, APROXIMADO, OU IGNORADO
-        self.cap.set(
-            cv2.CAP_PROP_FRAME_WIDTH,
-            self.width
-        )
-        self.cap.set(
-            cv2.CAP_PROP_FRAME_HEIGHT,
-            self.height
-        )
+        self.cap.set(cv2.CAP_PROP_FRAME_WIDTH, self.width)
+        self.cap.set(cv2.CAP_PROP_FRAME_HEIGHT, self.height)
 
     def read_frame(self):
 
