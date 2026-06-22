@@ -1,10 +1,9 @@
-import numpy as np
-import pandas as pd
-
 """
 Essa classe é responsável por coletar e armazenar amostras de features para análise estatística.
 Ou seja, coleta as features de cada frame e armazena para posterior análise.
 """
+
+
 class SessionCollector:
     def __init__(self, target_samples):
         self.target_samples = target_samples
@@ -22,6 +21,9 @@ class SessionCollector:
     def get_samples(self):
         return self.samples
 
+    def reset(self):
+        self.samples.clear()
+
 
 """
 Essa classe é responsável por agregar as amostras coletadas e contruir uma lista com as features agregadas estatísticamente.
@@ -33,22 +35,20 @@ class StatisticAggregator:
     def build_feature_vector(self, samples):
         feature_vector = {}
 
-        feature_vector["circularity"] = (
-            sum(s["circularity"] for s in samples)/ len(samples)
+        feature_vector["circularity"] = sum(s["circularity"] for s in samples) / len(
+            samples
         )
-        feature_vector["aspect_ratio"] = (
-            sum(s["aspect_ratio"] for s in samples) / len(samples)
+        feature_vector["aspect_ratio"] = sum(s["aspect_ratio"] for s in samples) / len(
+            samples
         )
-        feature_vector["holes"] = round(
-            sum(s["holes"] for s in samples) / len(samples)
-        )
-        feature_vector["area"] = (
-            sum(s["area"] for s in samples) / len(samples)
-        )
+        feature_vector["holes"] = round(sum(s["holes"] for s in samples) / len(samples))
+        feature_vector["area"] = sum(s["area"] for s in samples) / len(samples)
         feature_vector["is_hollow"] = round(
-            sum(s["is_hollow"] for s in samples)/ len(samples)
+            sum(s["is_hollow"] for s in samples) / len(samples)
         )
         return feature_vector
+
+
 """
 Essa classe é responsável por fazer a predição com base nas features agregadas.
 Ela usa o modelo de Random Forest treinado para fazer as predições
@@ -62,13 +62,9 @@ class PredictionService:
 
     def predict(self, feature_vector: dict, material_id: int):
         if material_id is None:
-            raise ValueError(
-                "Material não informado"
-            )
+            raise ValueError("Material não informado")
         if material_id < 0 or material_id > 2:
-            raise ValueError(
-                "Material Inváldio"
-            )
+            raise ValueError("Material Inváldio")
 
         result = self.model.predict(feature_vector)
         prediction = result["label"]

@@ -8,14 +8,6 @@ from vision.contours import ContourDetector
 from vision.features import FeatureExtractor
 from vision.preprocessor import Preprocessor
 
-preprocessor = Preprocessor()
-contour_detector = ContourDetector()
-extractor = FeatureExtractor()
-classifier = Classifier()
-collector = SessionCollector(target_samples=60)
-predictor = PredictionService(model=classifier)
-aggregator = StatisticAggregator()
-
 
 class Analyzer:
     def __init__(self, samples_target):
@@ -24,31 +16,37 @@ class Analyzer:
         self.extractor = FeatureExtractor()
         self.classifier = Classifier()
         self.collector = SessionCollector(target_samples=samples_target)
+        self.aggregator = StatisticAggregator()
+        self.predictor = PredictionService(self.classifier)
 
     def analyze(self, frame, material_id):
-        samples_count = 0
-        prediction_done = False
-
-        processed = preprocessor.process(frame)
-        largest_contour, hierarchy, all_contours = contour_detector.find_largest(
+        processed = self.preprocessor.process(frame)
+        largest_contour, hierarchy, all_contours = self.contour_detector.find_largest(
             processed
         )
 
         if largest_contour is not None:
-            features = extractor.extract_features(
+            features = self.extractor.extract_features(
                 largest_contour, hierarchy, all_contours=all_contours
             )
-            if not collector.is_complete():
-                collector.add(features)
-                samples_count += 1
+            if not self.collector.is_complete():
+                self.collector.add(features)
 
-        if collector.is_complete() and not prediction_done:
-            samples = collector.get_samples()
-            feature_vector = aggregator.build_feature_vector(samples)
-            prediction, confidence, is_confiable, message = predictor.predict(
+        if self.collector.is_complete():
+            samples = self.collector.get_samples()
+            feature_vector = self.aggregator.build_feature_vector(samples)
+            prediction, confidence, is_confiable, message = self.predictor.predict(
                 feature_vector, material_id
             )
-            return prediction, confidence, is_confiable, message
-        return None
+            self.collector.reset()
+            return {
+                "ready": True,
+                "prediction": prediction,
+                "confidence": confidence,
+                "is_confiable": is_confiable,
+                "message": message,
+            }
+        self.collector.reset()
+        return {"ready": False, "prediction": None}
 
         # Cabelo de pelé não cresce
