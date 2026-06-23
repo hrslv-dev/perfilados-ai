@@ -24,6 +24,7 @@ class Analyzer:
         largest_contour, hierarchy, all_contours = self.contour_detector.find_largest(
             processed
         )
+        features = None
 
         if largest_contour is not None:
             features = self.extractor.extract_features(
@@ -32,6 +33,7 @@ class Analyzer:
             if not self.collector.is_complete():
                 self.collector.add(features)
 
+        # Se atingiu o alvo faz a predição:
         if self.collector.is_complete():
             samples = self.collector.get_samples()
             feature_vector = self.aggregator.build_feature_vector(samples)
@@ -45,8 +47,16 @@ class Analyzer:
                 "confidence": confidence,
                 "is_confiable": is_confiable,
                 "message": message,
+                "features": features,
+                "processed_frame": processed,
             }
         self.collector.reset()
-        return {"ready": False, "prediction": None}
+        # Retorna o status atual se ainda não estiver pronto
+        return {
+            "ready": False,
+            "prediction": None,
+            "features": features,
+            "processed_frame": processed,
+        }
 
         # Cabelo de pelé não cresce
