@@ -40,7 +40,7 @@ class Analyzer:
             prediction, confidence, is_confiable, message = self.predictor.predict(
                 feature_vector, material_id
             )
-            self.collector.reset()
+
             return {
                 "ready": True,
                 "prediction": prediction,
@@ -50,7 +50,6 @@ class Analyzer:
                 "features": features,
                 "processed_frame": processed,
             }
-        self.collector.reset()
         # Retorna o status atual se ainda não estiver pronto
         return {
             "ready": False,
