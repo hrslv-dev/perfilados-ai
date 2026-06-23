@@ -33,11 +33,12 @@
 #  → Roda demos automáticos com features simuladas
 # =============================================================================
 
-import joblib
 import json
+from pathlib import Path
+
+import joblib
 import numpy as np
 import pandas as pd
-from pathlib import Path
 
 # ─── Configuração ─────────────────────────────────────────────────────────────
 
@@ -69,7 +70,7 @@ CONFIDENCE_THRESHOLD = 0.70
 
 # Mapeamento para display amigável na interface
 DISPLAY_NAMES = {
-    "tubo_redondo":             "Tubo Redondo",
+    "tubo_redondo": "Tubo Redondo",
     "tubo_quadrado_retangular": "Tubo Quadrado / Retangular",
 }
 
@@ -142,9 +143,9 @@ class Classifier:
         O modelo é carregado UMA VEZ quando o sistema inicia,
         e depois é reutilizado para todas as predições.
         """
-        model_path   = MODEL_DIR / "random_forest.pkl"
+        model_path = MODEL_DIR / "random_forest.pkl"
         encoder_path = MODEL_DIR / "label_encoder.pkl"
-        meta_path    = MODEL_DIR / "metadata.json"
+        meta_path = MODEL_DIR / "metadata.json"
 
         if not model_path.exists():
             raise FileNotFoundError(
@@ -157,7 +158,7 @@ class Classifier:
         # O RandomForestClassifier carregado é idêntico ao que foi treinado —
         # incluindo todas as 200 árvores com todos os seus splits.
         self.clf = joblib.load(model_path)
-        self.le  = joblib.load(encoder_path)
+        self.le = joblib.load(encoder_path)
 
         # O metadata.json é a fonte da verdade sobre a ordem das features.
         # Usar o arquivo salvo em vez da constante local garante que, mesmo
@@ -166,21 +167,19 @@ class Classifier:
             meta = json.load(f)
 
         self.feature_order = meta["feature_order"]
-        self.classes       = meta["classes"]
-        self._meta         = meta
+        self.classes = meta["classes"]
+        self._meta = meta
 
         print(f"[Classifier] Modelo carregado.")
         print(f"  Classes    : {self.classes}")
         print(f"  Features   : {self.feature_order}")
         print(f"  OOB Score  : {meta.get('oob_score', 'N/A')}")
-        print(f"  CV Accuracy: {meta.get('cv_accuracy_mean', 'N/A')} ± {meta.get('cv_accuracy_std', 'N/A')}")
+        print(
+            f"  CV Accuracy: {meta.get('cv_accuracy_mean', 'N/A')} ± {meta.get('cv_accuracy_std', 'N/A')}"
+        )
         print()
 
-    def predict(
-        self,
-        features: dict,
-        material: int | None = None
-    ) -> dict:
+    def predict(self, features: dict, material: int | None = None) -> dict:
         """
         Classifica um perfil com base no dicionário de features.
 
@@ -192,13 +191,13 @@ class Classifier:
 
         material : int | None
                    Código do material (0=carbono, 1=inox, 2=alumínio).
-                   Se passado, sobrescreve o valor em features["material"].
+                   Se passado, sobrescreve oprediction valor em features["material"].
                    Use quando o operador selecionou o material manualmente.
 
         Retorna: dict com os campos abaixo
         ──────────────────────────────────────────────────────────────────────
         {
-            "label":          str    → nome da classe predita
+            "label":          str    → nome predictionda classe predita
             "label_display":  str    → nome legível para a interface
             "confidence":     float  → probabilidade da classe predita (0-1)
             "confidence_pct": int    → confiança em percentual (0-100)
@@ -236,14 +235,14 @@ class Classifier:
             X = pd.DataFrame([{feat: f[feat] for feat in self.feature_order}])
         except KeyError as missing_key:
             return {
-                "label":          None,
-                "confidence":     0.0,
+                "label": None,
+                "confidence": 0.0,
                 "low_confidence": True,
-                "error":          (
+                "error": (
                     f"Feature ausente: {missing_key}. "
                     f"Features recebidas: {list(f.keys())}. "
                     f"Features esperadas: {self.feature_order}"
-                )
+                ),
             }
 
         # ─── Predição ─────────────────────────────────────────────────────────
@@ -254,22 +253,21 @@ class Classifier:
         # np.argmax encontra o índice da maior probabilidade.
         # le.inverse_transform converte o índice de volta para string.
 
-        probas     = self.clf.predict_proba(X)[0]    # array 1D com probabilidades
-        pred_idx   = int(np.argmax(probas))           # índice da classe vencedora
-        confidence = float(probas[pred_idx])          # confiança = proporção de votos
+        probas = self.clf.predict_proba(X)[0]  # array 1D com probabilidades
+        pred_idx = int(np.argmax(probas))  # índice da classe vencedora
+        confidence = float(probas[pred_idx])  # confiança = proporção de votos
 
         label = self.le.inverse_transform([pred_idx])[0]
 
         # ─── Montar resultado ─────────────────────────────────────────────────
         result = {
-            "label":          label,
-            "label_display":  DISPLAY_NAMES.get(label, label),
-            "confidence":     round(confidence, 4),
+            "label": label,
+            "label_display": DISPLAY_NAMES.get(label, label),
+            "confidence": round(confidence, 4),
             "confidence_pct": round(confidence * 100),
             "low_confidence": confidence < CONFIDENCE_THRESHOLD,
             "all_probas": {
-                cls: round(float(p), 4)
-                for cls, p in zip(self.classes, probas)
+                cls: round(float(p), 4) for cls, p in zip(self.classes, probas)
             },
             "features_used": {feat: f[feat] for feat in self.feature_order},
             "error": None,
@@ -304,8 +302,7 @@ class Classifier:
 
         f = result["features_used"]
         fi = pd.Series(
-            self.clf.feature_importances_,
-            index=self.feature_order
+            self.clf.feature_importances_, index=self.feature_order
         ).sort_values(ascending=False)
 
         lines = [
@@ -317,9 +314,7 @@ class Classifier:
         for feat, imp in fi.items():
             val = f[feat]
             bar = "█" * int(imp * 30)
-            lines.append(
-                f"  {feat:15s} = {val:8.3f}   importância: {bar} {imp:.3f}"
-            )
+            lines.append(f"  {feat:15s} = {val:8.3f}   importância: {bar} {imp:.3f}")
 
         if result["low_confidence"]:
             lines.append("")
@@ -340,6 +335,7 @@ class Classifier:
 #  TESTES AUTOMÁTICOS (executados com: python ml/model.py)
 # =============================================================================
 
+
 def _run_demos():
     """
     Testa o Classifier com casos conhecidos para validar que o modelo
@@ -351,52 +347,52 @@ def _run_demos():
     # Os valores foram escolhidos para simular features reais de cada classe
     test_cases = [
         {
-            "name":     "Tubo Redondo — caso típico",
+            "name": "Tubo Redondo — caso típico",
             "expected": "tubo_redondo",
             "features": {
-                "circularity":  0.94,   # muito próximo de 1.0 → muito redondo
-                "aspect_ratio": 1.02,   # w ≈ h → forma quadrada → tubo redondo de topo
-                "holes":        1,      # furo central detectado
-                "area":         2800.0, # área típica de tubo médio
-                "is_hollow":    1,      # confirma que é oco
-                "material":     1,      # inox
-            }
+                "circularity": 0.94,  # muito próximo de 1.0 → muito redondo
+                "aspect_ratio": 1.02,  # w ≈ h → forma quadrada → tubo redondo de topo
+                "holes": 1,  # furo central detectado
+                "area": 2800.0,  # área típica de tubo médio
+                "is_hollow": 1,  # confirma que é oco
+                "material": 1,  # inox
+            },
         },
         {
-            "name":     "Tubo Quadrado — caso típico",
+            "name": "Tubo Quadrado — caso típico",
             "expected": "tubo_quadrado_retangular",
             "features": {
-                "circularity":  0.72,   # abaixo de 0.785 (quadrado perfeito) → quadrado
-                "aspect_ratio": 0.99,   # quase quadrado (50x50mm)
-                "holes":        0,      # câmera não capturou o furo (posição)
-                "area":         3600.0, # área típica de tubo 50x50mm
-                "is_hollow":    0,      # não detectado como oco
-                "material":     0,      # aço carbono
-            }
+                "circularity": 0.72,  # abaixo de 0.785 (quadrado perfeito) → quadrado
+                "aspect_ratio": 0.99,  # quase quadrado (50x50mm)
+                "holes": 0,  # câmera não capturou o furo (posição)
+                "area": 3600.0,  # área típica de tubo 50x50mm
+                "is_hollow": 0,  # não detectado como oco
+                "material": 0,  # aço carbono
+            },
         },
         {
-            "name":     "Tubo Retangular — 20x40mm",
+            "name": "Tubo Retangular — 20x40mm",
             "expected": "tubo_quadrado_retangular",
             "features": {
-                "circularity":  0.58,   # bem abaixo de 0.78 → muito retangular
-                "aspect_ratio": 0.52,   # w=20, h=40 → 20/40 = 0.5
-                "holes":        0,
-                "area":         1900.0,
-                "is_hollow":    0,
-                "material":     0,
-            }
+                "circularity": 0.58,  # bem abaixo de 0.78 → muito retangular
+                "aspect_ratio": 0.52,  # w=20, h=40 → 20/40 = 0.5
+                "holes": 0,
+                "area": 1900.0,
+                "is_hollow": 0,
+                "material": 0,
+            },
         },
         {
-            "name":     "Caso Ambíguo — circularity na fronteira",
-            "expected": None,           # resultado esperado incerto
+            "name": "Caso Ambíguo — circularity na fronteira",
+            "expected": None,  # resultado esperado incerto
             "features": {
-                "circularity":  0.80,   # exatamente entre redondo (>0.82) e quadrado (<0.78)
+                "circularity": 0.80,  # exatamente entre redondo (>0.82) e quadrado (<0.78)
                 "aspect_ratio": 1.00,
-                "holes":        1,
-                "area":         3100.0,
-                "is_hollow":    1,
-                "material":     0,
-            }
+                "holes": 1,
+                "area": 3100.0,
+                "is_hollow": 1,
+                "material": 0,
+            },
         },
     ]
 

@@ -8,6 +8,13 @@ from vision.contours import ContourDetector
 from vision.features import FeatureExtractor
 from vision.preprocessor import Preprocessor
 
+LOCATION_MAPPING = {
+    "tubo_redondo_macico": {"icon": "🟢", "shelf": "A"},
+    "tubo_quadrado_macico": {"icon": "🔵", "shelf": "B"},
+    "tubo_quadrado_oco": {"icon": "🔴", "shelf": "C"},
+    "tubo_redondo_oco": {"icon": "🟡", "shelf": "D"},
+}
+
 
 class Analyzer:
     def __init__(self, samples_target):
@@ -41,9 +48,15 @@ class Analyzer:
                 feature_vector, material_id
             )
 
+            location = LOCATION_MAPPING.get(
+                prediction, {"icon": "None", "shelf": "DESCONHECIDA"}
+            )
+
             return {
                 "ready": True,
                 "prediction": prediction,
+                "icon": location["icon"],
+                "shelf": location["shelf"],
                 "confidence": confidence,
                 "is_confiable": is_confiable,
                 "message": message,
@@ -57,5 +70,3 @@ class Analyzer:
             "features": features,
             "processed_frame": processed,
         }
-
-        # Cabelo de pelé não cresce
