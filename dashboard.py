@@ -12,7 +12,14 @@ from vision.renderer import Renderer
 
 # 1. Configuração da Página Web
 st.set_page_config(page_title="Inspeção de Perfilados", layout="wide")
-st.title("🏭 Sistema de Inspeção de Perfilados Industriais")
+
+# Título da aplicação e logo da System.AI alinhada no topo
+col_titulo, col_logo_system = st.columns([8, 2])
+with col_titulo:
+    st.title("🏭 Sistema de Inspeção de Perfilados Industriais")
+with col_logo_system:
+    # Insira a logo System.AI com transparência aqui
+    st.image("image_3.png", width=150)  # Ajuste a largura se necessário
 
 # 2. Barra Lateral (Menu de Configurações)
 st.sidebar.header("Configurações")
@@ -59,7 +66,18 @@ with coluna_dados:
     st.subheader("Resultado da Predição")
     painel_resultado = st.empty()
 
-# 4. O Loop Principal do Sistema
+# 4. Logos de Apoio e Parceria alinhadas no rodapé
+st.markdown("---")
+st.subheader("Apoio e Parceria:")
+col_mecald, col_senai = st.columns(2)
+with col_mecald:
+    # Insira a logo Mecald com transparência aqui
+    st.image("image_1.png", width=250)  # Ajuste a largura se necessário
+with col_senai:
+    # Insira a logo Senai com transparência aqui
+    st.image("image_2.png", width=200)  # Ajuste a largura se necessário
+
+# 5. O Loop Principal do Sistema
 if st.session_state.rodando:
     # Inicializa as classes
     camera = CameraCapture()
@@ -149,6 +167,7 @@ if st.session_state.rodando:
         # Atualiza as imagens na interface web (converte para o padrão Streamlit)
         video_placeholder.image(frame_exibicao, channels="BGR", use_column_width=True)
         if processed_frame is not None:
+            # Removemos o channels="GRAY" para corrigir o erro
             thresh_placeholder.image(processed_frame, use_column_width=True)
 
         # Pequena pausa para não travar a interface web
