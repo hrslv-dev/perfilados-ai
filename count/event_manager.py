@@ -11,7 +11,6 @@ Qual problema essa classe resolve?
 
 import time 
 from datetime import datetime
-from detection_state import DetectionState
 
 class EventManager:
     
@@ -73,40 +72,42 @@ class EventManager:
     
         # Essa linha pergunta: Já existe um estado oficial? 
         if self.confirmed_count is None:
-            return DetectionState.NO_CHANGE
+            return False
         
         # Nada mudou, mas já existe um valor confirmado 
         # Então os valores candidatos devem ser limpados 
         if current_count == self.confirmed_count: 
             self.candidate_count = None 
             self.change_start_time = None 
-            return DetectionState.NO_CHANGE
+            return False
 
         # Primeira vez que estou vendo uma mudança 
         # Existe uma mudança candidata, mas ela não foi confirmada ainda 
         if self.candidate_count is None: 
             self.candidate_count = current_count 
             self.change_start_time = time.time()
-            return DetectionState.CANDIDATE_CREATED
-        
+            return True 
+                
         # Mudança não estabilizada ainda 
         # Aplica "nova" mudança aos valores das variavéis 
         if current_count != self.candidate_count: 
             self.candidate_count = current_count
             self.change_start_time = time.time()
-            return DetectionState.CANDIDATE_UPDATED
+            return True
         
         '''
         Dentro dessa função já existe uma certa camada de aplicações redundantes, que evitam 
         o "erro do sistem" por assim dizer 
         '''
-        
         # Candidato estabilizado e nada mudou desde o último frame        
-        return DetectionState.WAITING_CONFIRMATION
+        return True
         
-        
-            
-    
+
+    ''' 
+    O que significa confirmar mudança? 
+    Determinar se a mudança candidata possui evidências suficientes para ser considerada uma 
+    movimentação real de estoque 
+    '''
     def _confirm_change(): 
         return None 
     def _create_event(): 
