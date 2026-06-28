@@ -42,6 +42,8 @@ class ContourDetector:
             return None, hierarchy, all_contours
         largest = max(filtered, key=cv2.contourArea)
         return largest, hierarchy, all_contours
+    
+    # Quando eu retorno um contorno, como largest e all_contours eu retorno um array?   
 
     # Desenha linhas, bordas sobre a imagem
     def draw_contours(self, frame, contours):
