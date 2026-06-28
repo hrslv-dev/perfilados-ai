@@ -1,33 +1,44 @@
 """
-O sistema precisa saber:
-    Estado anterior
-        |
-    Estado atual
-        |
-    Diferença
-        |
-    Evento
+Qual problema essa classe resolve? 
+    O que o sistema faz até agora: 
+    Imagem -> Contornos -> Quantidade
+    
+    Mas estoque não trabalha com quantidade 
+    Estoque trabalha com movimentações 
+    
+    Estoque trabalha com mudanças de estados
 """
 
-"""
-Não adianta fazer algo como:
-    if actual != previous:
-        register_event()
-Porque a câmera pode acabar oscilando bastante, e
-como o foco é visão computacional para contagem de materiais,
-fica inconsistente esse modo de registro.
-"""
-
-"""
-Redundância:
-    Deve ser aplicado um modelo de redundância utilizando tempo,
-    caso após certa quantidade de tempo o estado de mudança não tenha se
-    mantido, o evento é descartado.
-"""
-
+import time 
+from datetime import datetime
+from detection_state import DetectionState
 
 class EventManager:
-    def __init__(self):
+    
+    '''
+    Responsável por detectar alterações confirmadas na quantidade de periflados 
+    e transforma-las em eventos de movimentação de estoque.
+    
+    ---------------------------------------------------------------------------
+    Essa classe pode ser considerada uma máquina de estados (State Machine)
+    --------------------------------------------------------------------------- 
+    Responsabilidade da classe: 
+        - Receber contagem 
+        - Comparar com o estado atual 
+        - Detectar mudança 
+        - Confirmar mudanças 
+        - Gerar evento 
+        - Registrar evento 
+        
+        Essa classe DEVE possuir memória. Ela precisa lembrar as coisas. 
+        
+        Ou seja, o que essa classe faz publicamente? 
+        Atualiza o estado usando esta nova contagem
+        
+        Ela deve responder se houve um evento, ou não 
+    '''
+    
+    def __init__(self, confirmation_time=5, logger=None):
         # Quantidade oficialmente aceita
         self.confirmed_count = None
         # Possível nova quantidade
@@ -35,4 +46,68 @@ class EventManager:
         # Momento que a mudança apareceu
         self.change_start_time = None
         # Tempo mínimo
-        self.confirmation_time = 3
+        self.confirmation_time = confirmation_time
+        # Logger (Ponto de referência para registro de eventos)
+        self.logger = logger
+
+    # Coordena o fluxo de geração de eventos 
+    def update(self,current_count):        
+        if  self._detect_change(current_count) is None: 
+            return None
+        
+        if not self._confirm_change(): 
+            return None 
+        
+        event = self._create_event()
+        self._update_state()
+        self._log_event(event)
+        
+        return event
+
+    # Verifica se existe mudança candidata 
+    def _detect_change(self, current_count): 
+        '''
+        Analisa a nova contagem recebida, atualiza o estado interno da detecção de mudanças e 
+        informa se existe uma mudança candidata aguradando confirmação 
+        '''
+    
+        # Essa linha pergunta: Já existe um estado oficial? 
+        if self.confirmed_count is None:
+            return DetectionState.NO_CHANGE
+        
+        # Nada mudou, mas já existe um valor confirmado 
+        # Então os valores candidatos devem ser limpados 
+        if current_count == self.confirmed_count: 
+            self.candidate_count = None 
+            self.change_start_time = None 
+            return DetectionState.NO_CHANGE
+
+        # Primeira vez que estou vendo uma mudança 
+        # Existe uma mudança candidata, mas ela não foi confirmada ainda 
+        if self.candidate_count is None: 
+            self.candidate_count = current_count 
+            self.change_start_time = time.time()
+            return DetectionState.CANDIDATE_CREATED
+        
+        # Mudança não estabilizada ainda 
+        # Aplica "nova" mudança aos valores das variavéis 
+        if current_count != self.candidate_count: 
+            self.candidate_count = current_count
+            self.change_start_time = time.time()
+            return DetectionState.CANDIDATE_UPDATED
+        
+        '''
+        Dentro dessa função já existe uma certa camada de aplicações redundantes, que evitam 
+        o "erro do sistem" por assim dizer 
+        '''
+        
+        # Candidato estabilizado e nada mudou desde o último frame        
+        return DetectionState.WAITING_CONFIRMATION
+        
+        
+            
+    
+    def _confirm_change(): 
+        return None 
+    def _create_event(): 
+        return None 
