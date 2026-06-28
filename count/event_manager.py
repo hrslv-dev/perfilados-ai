@@ -51,7 +51,7 @@ class EventManager:
 
     # Coordena o fluxo de geração de eventos 
     def update(self,current_count):        
-        if  self._detect_change(current_count) is None: 
+        if not self._detect_change(current_count): 
             return None
         
         if not self._confirm_change(): 
@@ -107,8 +107,56 @@ class EventManager:
     O que significa confirmar mudança? 
     Determinar se a mudança candidata possui evidências suficientes para ser considerada uma 
     movimentação real de estoque 
+    
+    O que ela deve retornar para conversar com o resto da classe? 
+    Um valor True ou False. 
+    
+    Por que? 
+    Porque esse método deve responder uma única pergunta: 
+        " A mudança já pode ser aceita? " 
     '''
-    def _confirm_change(): 
-        return None 
-    def _create_event(): 
-        return None 
+    def _confirm_change(self):
+        # Nenhuma mudança sendo acompanhada 
+        if self.change_start_time is None: 
+            return False 
+        
+        elapsed_time = time.time() - self.change_start_time
+        return elapsed_time >= self.confirmation_time
+            
+
+    def _update_state(self): 
+        '''
+        Atualiza o estado interno após uma mudança confirmada.     
+        
+        '''
+    
+        self.confirmed_count = self.candidate_count 
+        self.candidate_count = None 
+        self.change_start_time = None
+
+    def _create_event(self): 
+        '''
+        Cria um dicionário representando um evento de movimentação 
+        '''
+        
+        if self.candidate_count > self.confirmed_count: 
+            event_type = "ENTRY"
+        else: 
+            event_type = "EXIT"
+            
+        return { 
+                "timestamp": datetime.now().strftime("%d/%m/%Y %H:%M:%S"), 
+                "event_type": event_type, 
+                "previous_count": self.confirmed_count, 
+                "current_count": self.candidate_count, 
+                "difference": abs(self.candidate_count - self.confirmed_count)
+                }  
+
+    def _log_event(self,event): 
+        '''
+        Envia o evento para o logger, caso exista
+        '''
+        if self.logger is not None: 
+            self.logger.save(event)
+        
+        
